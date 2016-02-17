@@ -1,11 +1,78 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<assert.h>
+
+#define ASSERT_OK(object, pointer)\
+        if(!object##_ok (pointer))\
+        {\
+                object##_dump (pointer);\
+                assert(!"Bad object" #pointer);\
+        }             
 
 struct Node {
 	char* q;
 	struct Node* n;
 	struct Node* y;
 };
+
+char tree_ok(struct Node* this)
+{
+	if(this == NULL) 
+		return 0;
+	if(this->n != NULL)
+	{
+		if(this->y == NULL)
+			return 0;
+		if(tree_ok(this->n) && tree_ok(this->y))
+			return 1;
+		return 0;
+	}
+	if(this->y != NULL)
+        {
+                if(this->n == NULL)
+                        return 0;
+                if(tree_ok(this->n) && tree_ok(this->y))
+                        return 1;
+                return 0;
+       	}
+        return 1;
+}
+
+char file_ok(FILE* this)
+{
+	if(this == NULL) 
+		return 0;
+	return 1;
+}
+
+void file_dump(FILE* this)
+{
+	printf("\n\n/////////// TREE DUMP //////////\n\n");
+	printf("Cann't open file\n");
+        printf("\n////////////////////////////////\n\n");
+}
+
+void tree_dmpprt(struct Node* this, int level)
+{
+        if(this == NULL)
+        {
+                printf("This tree wasn't create\n");
+        }
+        for(int i = 0; i < level; i++)
+                printf("    ");
+        printf("%s    %p    %p\n",this->q, this->n, this->y);
+        if(this->y != NULL)
+                tree_dmpprt(this->y, level + 1);
+        if(this->n != NULL)
+                tree_dmpprt(this->n, level + 1);
+}
+
+void tree_dump(struct Node* this)
+{
+	printf("\n\n/////////// TREE DUMP //////////\n\n");
+	tree_dmpprt(this, 0);
+	printf("\n////////////////////////////////\n\n");
+}
 
 char* getstr(char det1, char det2)
 {
@@ -63,10 +130,16 @@ struct Node* tree_create(char* name)
 {
 	struct Node* a;
 	FILE* in = fopen(name, "r");
+
+	ASSERT_OK(file, in);
+
 	char ch;
 	fscanf(in, "%c", &ch);
 	a = tree_load(in);
 	fclose(in);
+
+	ASSERT_OK(file, in)	
+
 	return a;
 }
 
@@ -128,6 +201,9 @@ void tree_print(struct Node* t, FILE* out)
 void tree_save(struct Node* t, char* name)
 {
 	FILE* out = fopen(name, "w");
+
+	ASSERT_OK(file, out)
+	
 	tree_print(t, out);
 	fclose(out);
 }
@@ -136,11 +212,19 @@ void tree_execute()
 {
 	char f = 1;
 	struct Node* t = tree_create("save.txt");
+
+	ASSERT_OK(tree, t)
+
 	struct Node* root = t;
 	while(f == 1)
 	{	
+		ASSERT_OK(tree, t)
+
 		while(t->y != NULL)
 			t = tree_ask(t);
+
+		ASSERT_OK(tree, t)
+
 		printf("%s\n", t->q);
 		printf("Am I right?  y/n\n");
 		char a = getans();
@@ -169,15 +253,22 @@ void tree_execute()
 			}
 			printf("I rememer it..\n");
 		}
+			
+		ASSERT_OK(tree, t)
+		
 		printf("Again?  y/n\n");
-		
 		a = getans();
-		
 		if(a == 'n')
 			f = 0;
 		t = root;
 	}
+
+	ASSERT_OK(tree, t)
+
 	tree_save(t, "save.txt");
+
+	ASSERT_OK(tree, t)
+
 	tree_destroy(t);
 }
 
